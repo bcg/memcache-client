@@ -722,6 +722,19 @@ class TestMemCache < Test::Unit::TestCase
     assert_equal expected, server.socket.written.string
   end
 
+  def test_set_nonblock
+    server = FakeServer.new
+    server.socket.data.write "NEVER READ"
+    server.socket.data.rewind
+    @cache.servers = []
+    @cache.servers << server
+
+    @cache.set 'key', 'value', 0, true, true
+    expected = "set my_namespace:key 0 0 5\r\nvalue\r\n"
+    assert_equal expected, server.socket.written.string
+    assert_equal "NEVER READ", server.socket.gets
+  end
+
   def test_set_readonly
     cache = MemCache.new :readonly => true
 

@@ -272,14 +272,15 @@ class MemCache
 
   ##
   # Add +key+ to the cache with value +value+ that expires in +expiry+
-  # seconds.  If +raw+ is true, +value+ will not be Marshalled.
+  # seconds.  If +raw+ is true, +value+ will not be Marshalled. If +nonblock+
+  # is true, the client will not wait for a response from the cache.
   #
   # Warning: Readers should not call this method in the event of a cache miss;
   # see MemCache#add.
 
   ONE_MB = 1024 * 1024
 
-  def set(key, value, expiry = 0, raw = false)
+  def set(key, value, expiry = 0, raw = false, nonblock = false)
     raise MemCacheError, "Update of readonly cache" if @readonly
     with_server(key) do |server, cache_key|
 
@@ -293,6 +294,7 @@ class MemCache
 
       with_socket_management(server) do |socket|
         socket.write command
+        return if nonblock
         result = socket.gets
         raise_on_error_response! result
 
